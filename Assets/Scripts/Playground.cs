@@ -1,6 +1,13 @@
 ﻿using System;
+using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
+
+using Random = System.Random;
+
+using UnityEngine;
+
+using SM3.Helpers;
 
 namespace SM3
 {
@@ -11,9 +18,7 @@ namespace SM3
         public byte ElementTypesCount { get; private set; }
         private List<byte> _elements;
 
-        public Action OnSwaped;
-        public Action OnRearrange;
-        public Action OnFilled;
+        public Action<List<Tuple<int, byte>>> OnPlaygroundUpdated;
 
         public Playground(byte n, byte m, byte elementTypesCount)
         {
@@ -23,7 +28,9 @@ namespace SM3
 
             _elements = new List<byte>();
             for (var i = 0; i < n * m; i++)
-                Add((byte) new Random().Next(1, elementTypesCount));
+                Add((byte) new Random().Next(1, new Random().Next(1, new Random().Next(1, elementTypesCount))));
+
+            Debug.Log(PrettyLog.GetMessage(nameof(Playground), "Ctor", _elements));
         }
 
         public byte this[int index]
@@ -73,18 +80,29 @@ namespace SM3
 
         private bool CheckRow(int index, byte type)
         {
+            var lineIndex = index / Width;
+            
+            var leftBorder = lineIndex * Width + 1;
+            var rightBorder = (index + 1) * Width + 1;
+            
+            var leftIndex1 = index - 1;
+            var leftIndex2 = index - 2;
+
+            var rightIndex1 = index + 1;
+            var rightIndex2 = index + 2;
+
             return 
-                (_elements[++index] == type && _elements[--index] == type) ||
-                (_elements[++index] == type && _elements[index + 2] == type) || 
-                (_elements[--index] == type && _elements[index - 2] == type);
+                (leftIndex1 >= leftBorder && rightIndex1 <= rightBorder && _elements[leftIndex1] == type && _elements[rightIndex1] == type) ||
+                (leftIndex1 >= leftBorder && leftIndex2 >= leftBorder && _elements[leftIndex1] == type && _elements[leftIndex2] == type) || 
+                (rightIndex1 <= rightBorder && rightIndex2 <= rightBorder && _elements[rightIndex1] == type && _elements[rightIndex2] == type);
         }
 
         private bool CheckColumn(int index, byte type)
         {
-            return 
-                (_elements[++index] == type && _elements[--index] == type) || 
-                (_elements[++index] == type && _elements[--index] == type) || 
-                (_elements[++index] == type && _elements[--index] == type);
+            return false;
+                // (_elements[++index] == type && _elements[--index] == type) || 
+                // (_elements[++index] == type && _elements[--index] == type) || 
+                // (_elements[++index] == type && _elements[--index] == type);
         }
 
         public void Swap(int source, int target)
@@ -93,28 +111,48 @@ namespace SM3
             _elements[target] = _elements[source];
             _elements[source] = elementType;
 
-            OnSwaped?.Invoke();
+            var updatedElementes = 
+                new[] 
+                {
+                    Tuple.Create(source, _elements[source]), 
+                    Tuple.Create(target, _elements[target])
+                }.ToList();
+
+            OnPlaygroundUpdated?.Invoke(updatedElementes);
         }
 
-        public void Clean()
+        public void CleanAt(int index)
         {
-            GetRemovableElements().ForEach(RemoveAt);
+            var list = GetRemovableElements(index);
+            list.ForEach(RemoveAt);
+
+            var result = new List<Tuple<int, byte>>();
+
+            foreach (var e in list)
+                result.Add(Tuple.Create(e, (byte) 0));
+
+            OnPlaygroundUpdated?.Invoke(result);
+
+            Debug.Log(PrettyLog.GetMessage<int>(CleanAt, $"{index}"));
         }
 
-        private List<int> GetRemovableElements()
+        private List<int> GetRemovableElements(int index)
         {
-            var result = new List<int>();
-            return result;
+            return new List<int>() { index - 1, index, index + 1 };
         }
 
         public void Rearrange()
         {
-            OnRearrange?.Invoke();
+            //OnPlaygroundUpdated?.Invoke(new List<Tuple<int, byte>>());
+
+            Debug.Log(PrettyLog.GetMessage(Rearrange));
         }
 
         public void Fill()
         {
-            OnFilled?.Invoke();
+            //OnPlaygroundUpdated?.Invoke(new List<Tuple<int, byte>>());
+
+            Debug.Log(PrettyLog.GetMessage(Fill));
         }
 
         public void Clear()

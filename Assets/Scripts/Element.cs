@@ -40,7 +40,7 @@ namespace SM3
             
             if (OnTrySwap != null)
             {
-                //if (Input.GetMouseButtonDown(0)) return;
+                if (Input.GetMouseButtonDown(0)) return;
                 
                 RaycastHit hit;
                 Physics.Raycast(upPosition, new Vector3(0f, 0f, 1f), out hit);

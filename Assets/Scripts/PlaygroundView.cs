@@ -1,7 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
 using System.Linq;
+using System.Collections;
+using System.Collections.Generic;
 
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 using SM3.Helpers;
 
@@ -20,6 +23,8 @@ namespace SM3
 
             _playground = playground;
 
+            _playground.OnPlaygroundUpdated += UpdatePlaygroundView;
+            
             // Initialization background
             _backgroundPlane = GameObject.CreatePrimitive(PrimitiveType.Plane);
             _backgroundPlane.transform.SetParent(transform);
@@ -45,20 +50,21 @@ namespace SM3
             _elements = new GameObject(Defaults.ElementsGameObjectName);
             _elements.transform.SetParent(transform);
 
+            int index;
+
             playground.ToList().ForEach(element =>
             {   
                 var @object = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 var elementComponent = @object.AddComponent<Element>();
+
                 elementComponent.OnTrySwap += TrySwapElements;
-
-                var colorIndex = new System.Random().Next(1, _colors.Count);
-                @object.GetComponent<MeshRenderer>().material = 
-                    new Material(Shader.Find(Defaults.BackgroundPlaneShader)) { color = _colors[colorIndex] };
                 @object.transform.SetParent(_elements.transform);
-
-                var index = @object.transform.GetSiblingIndex();
+                index = @object.transform.GetSiblingIndex();
+                @object.GetComponent<MeshRenderer>().material = 
+                    new Material(Shader.Find(Defaults.BackgroundPlaneShader)) { color = _colors[playground[index]] };
+                
                 var x = (index * 2) % (2 * playground.Width) - playground.Width;
-                var y = playground.Height - ((index * 2) % (playground.Height * 2));
+                var y = playground.Height - (index / playground.Width * 2) % (playground.Height * 2);
 
                 @object.name = $"{index}";
                 @object.transform.localPosition = new Vector3(x, y, -1);
@@ -67,13 +73,36 @@ namespace SM3
 
         private void TrySwapElements(Element source, Element target)
         {
-            var sourceId = int.Parse(source.name);
-            var targetId = int.Parse(target.name);
+            var sourceIndex = int.Parse(source.name);
+            var targetIndex = int.Parse(target.name);
 
-            var canSwap = _playground.CanSwap(sourceId, targetId);
-            print(PrettyLog.GetMessage($"Opportunity to swap {sourceId} with {targetId} is {canSwap}"));
+            var canSwap = _playground.CanSwap(sourceIndex, targetIndex);
+            print(PrettyLog.GetMessage($"Opportunity to swap {sourceIndex} with {targetIndex} is {canSwap}"));
             if (canSwap)
-                _playground.Swap(sourceId, targetId);
+                StartCoroutine(MakeFullSwap(sourceIndex, targetIndex));
+        }
+
+        private IEnumerator MakeFullSwap(int sourceIndex, int targetIndex)
+        {
+            _playground.Swap(sourceIndex, targetIndex);
+            yield return new WaitForSeconds(0.5f);
+
+            _playground.CleanAt(sourceIndex);
+            yield return new WaitForSeconds(0.5f);
+            
+            _playground.Rearrange();
+            yield return new WaitForSeconds(0.5f);
+            _playground.Fill();
+            yield return null;
+        }
+
+        private void UpdatePlaygroundView(List<Tuple<int, byte>> changedElements)
+        {
+            changedElements.ForEach(element =>
+            {
+                var @object = _elements.transform.GetChild(element.Item1);
+                @object.GetComponent<MeshRenderer>().material.color = _colors[element.Item2] ;
+            });
         }
     }
 }

@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
@@ -18,12 +20,26 @@ namespace SM3.Helpers
             return SetFontSize($"[{@class}][{method}] {message}");
         }
 
+        public static string GetMessage(string @class, string method, IEnumerable<byte> args)
+        {
+            var message = string.Empty;
+            var j = 0;
+            foreach (var arg in args) message += $"[{j++}:{arg}]; ";
+
+            return SetFontSize($"[{@class}][{method}] {message}");
+        }
+
         public static string GetMessage(Action method)
         {
             return SetFontSize($"[{method.Method.DeclaringType}][{method.Method.Name}]");
         }
 
         public static string GetMessage(Action method, string message)
+        {
+            return SetFontSize($"[{method.Method.DeclaringType}][{method.Method.Name}] {message}");
+        }
+
+        public static string GetMessage<T>(Action<T> method, string message)
         {
             return SetFontSize($"[{method.Method.DeclaringType}][{method.Method.Name}] {message}");
         }
@@ -48,6 +64,12 @@ namespace SM3.Helpers
             var tmp = (Color32) color;
             return SetFontSize($"<color=#{tmp.r:X2}{tmp.g:X2}{tmp.b:X2}> \u2587 </color>{message}");
         }
+
+        // public static string GetMessage(IEnumerable<T> collection)
+        // {
+        //     var message = collection.Aggregate()
+        //     return 
+        // }
 
         private static string SetFontSize(string message, int fontSize = 14)
         {
