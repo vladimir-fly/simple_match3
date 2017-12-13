@@ -20,11 +20,11 @@ namespace SM3.Helpers
             return SetFontSize($"[{@class}][{method}] {message}");
         }
 
-        public static string GetMessage(string @class, string method, IEnumerable<byte> args)
+        public static string GetMessage<T>(string @class, string method, IEnumerable<T> args)
         {
-            var message = string.Empty;
             var j = 0;
-            foreach (var arg in args) message += $"[{j++}:{arg}]; ";
+            var message = 
+                args.Any() ? args.Select(arg => $"[{j++}:{arg}]").Aggregate((arg1, arg2) => $"{arg1}{arg2}") : "Collection is empty!";
 
             return SetFontSize($"[{@class}][{method}] {message}");
         }
@@ -65,12 +65,6 @@ namespace SM3.Helpers
             return SetFontSize($"<color=#{tmp.r:X2}{tmp.g:X2}{tmp.b:X2}> \u2587 </color>{message}");
         }
 
-        // public static string GetMessage(IEnumerable<T> collection)
-        // {
-        //     var message = collection.Aggregate()
-        //     return 
-        // }
-
         private static string SetFontSize(string message, int fontSize = 14)
         {
             return $"<size={fontSize}>{message}</size>";
@@ -78,7 +72,13 @@ namespace SM3.Helpers
 
         private static string SetFontColor(string message, Color fontColor)
         {
-            return $"<color={fontColor}>{message}</color>";
+            var tmp = (Color32) fontColor;
+            return $"<color=#{tmp.r:X2}{tmp.g:X2}{tmp.b:X2}>{message}</color>";
+        }
+
+        private static string SetFontColor(object message, Color fontColor)
+        {
+            return SetFontColor(message.ToString(), fontColor);
         }
     }
 }

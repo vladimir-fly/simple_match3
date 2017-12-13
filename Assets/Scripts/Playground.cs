@@ -75,10 +75,10 @@ namespace SM3
 
         private bool CheckSwap(int index, byte type)
         {
-            return CheckRow(index, type) || CheckColumn(index, type);
+            return CheckRowNeighbors(index, type) || CheckColumnNeighbors(index, type);
         }
 
-        private bool CheckRow(int index, byte type)
+        private bool CheckRowNeighbors(int index, byte type)
         {
             var lineIndex = index / Width;
             
@@ -97,7 +97,7 @@ namespace SM3
                 (rightIndex1 <= rightBorder && rightIndex2 <= rightBorder && _elements[rightIndex1] == type && _elements[rightIndex2] == type);
         }
 
-        private bool CheckColumn(int index, byte type)
+        private bool CheckColumnNeighbors(int index, byte type)
         {
             return false;
                 // (_elements[++index] == type && _elements[--index] == type) || 
@@ -123,22 +123,73 @@ namespace SM3
 
         public void CleanAt(int index)
         {
+            Debug.Log(PrettyLog.GetMessage(nameof(Playground), nameof(CleanAt), $"{index}"));
             var list = GetRemovableElements(index);
             list.ForEach(RemoveAt);
-
-            var result = new List<Tuple<int, byte>>();
-
-            foreach (var e in list)
-                result.Add(Tuple.Create(e, (byte) 0));
-
+            
+            var result = list.Select(element => Tuple.Create(element, (byte) 0)).ToList();
+            Debug.Log(PrettyLog.GetMessage(nameof(Playground), nameof(CleanAt), result));
             OnPlaygroundUpdated?.Invoke(result);
-
-            Debug.Log(PrettyLog.GetMessage<int>(CleanAt, $"{index}"));
         }
 
         private List<int> GetRemovableElements(int index)
         {
-            return new List<int>() { index - 1, index, index + 1 };
+            var result = new List<int>() { index };
+
+            while(true)
+            {
+                var elements = GetAllAvailableElements(result);
+                if (!elements.Any()) break;
+                result.AddRange(elements);
+            }
+
+            Debug.Log(PrettyLog.GetMessage(nameof(Playground), nameof(GetRemovableElements), result));
+            return result.Distinct().ToList();
+        }
+
+        private List<int> GetAllAvailableElements(List<int> indexes)
+        {
+            var result = new List<int>();
+            
+            indexes.ForEach(index => result.AddRange(GetMaxHorizontallSubset(index)));
+            indexes.ForEach(index => result.AddRange(GetMaxVerticalSubset(index)));
+
+            return result.Distinct().Except(indexes).ToList();
+        }
+
+        private List<int> GetMaxHorizontallSubset(int index)
+        {
+            var result = new List<int>();
+            if (!CheckRowNeighbors(index, _elements[index]))
+                return result;
+
+            var leftBorder = (index / Width) * Width;
+            var rightBorder = (index / Width + 1) * Width - 1;
+            var elementType = _elements[index];
+
+            for (var leftIndex = index; leftIndex >= leftBorder; leftIndex--)
+            {
+                if (leftIndex >= leftBorder && _elements[leftIndex] == elementType) 
+                    result.Add(leftIndex);
+                else break;
+            }
+
+            for (var rightIndex = index; rightIndex <= rightBorder; rightIndex++)
+            {
+                if (rightIndex <= rightBorder && _elements[rightIndex] == elementType)
+                    result.Add(rightIndex);
+                else break;
+            }
+
+            return result;
+        }
+
+        private List<int> GetMaxVerticalSubset(int index)
+        {
+            var result = new List<int>();
+
+            //find subset
+            return result;
         }
 
         public void Rearrange()
@@ -150,9 +201,21 @@ namespace SM3
 
         public void Fill()
         {
-            //OnPlaygroundUpdated?.Invoke(new List<Tuple<int, byte>>());
+            var filledElements = new List<Tuple<int, byte>>();
+            var i = 0;
+            
+            _elements.ForEach(element =>
+            {
+                if (element == 0)
+                    filledElements.Add(Tuple.Create(i, 
+                        (byte) new Random().Next(1, new Random().Next(1, ElementTypesCount)));
+                i++;
+            });
+            
+            filledElements.ForEach(element =>_elements[element.Item1] = element.Item2);
 
-            Debug.Log(PrettyLog.GetMessage(Fill));
+            OnPlaygroundUpdated?.Invoke(filledElements);
+            Debug.Log(PrettyLog.GetMessage(nameof(Playground), nameof(Fill), filledElements));
         }
 
         public void Clear()

@@ -90,8 +90,9 @@ namespace SM3
             _playground.CleanAt(sourceIndex);
             yield return new WaitForSeconds(0.5f);
             
-            _playground.Rearrange();
+            //_playground.Rearrange();
             yield return new WaitForSeconds(0.5f);
+            
             _playground.Fill();
             yield return null;
         }
