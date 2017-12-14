@@ -9,16 +9,11 @@ namespace SM3
 {
     public class Element : MonoBehaviour
     {
-        [SerializeField] private Animation _bounce;
         private Vector3 _screenPoint;
         private Vector3 _startPosition;
         private bool _isDragging;
         public Action<Element, Element> OnTrySwap;
 
-        private void Start()
-        {
-
-        }
 
         private void OnMouseDown()
         {

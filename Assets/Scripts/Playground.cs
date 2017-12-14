@@ -99,10 +99,19 @@ namespace SM3
 
         private bool CheckColumnNeighbors(int index, byte type)
         {
-            return false;
-                // (_elements[++index] == type && _elements[--index] == type) || 
-                // (_elements[++index] == type && _elements[--index] == type) || 
-                // (_elements[++index] == type && _elements[--index] == type);
+            var topBorder = index % Width;
+            var bottomBorder = topBorder + (Height - 1) * Width;
+            
+            var topIndex1 = index - Width;
+            var topIndex2 = index - 2 * Width;
+
+            var bottomIndex1 = index + Width;
+            var bottomIndex2 = index + 2 * Width;
+
+            return 
+                (topIndex1 >= topBorder && bottomIndex1 <= bottomBorder && _elements[topIndex1] == type && _elements[bottomIndex1] == type) ||
+                (topIndex1 >= topBorder && topIndex2 >= topBorder && _elements[topIndex1] == type && _elements[topIndex2] == type) || 
+                (bottomIndex1 <= bottomBorder && bottomIndex2 <= bottomBorder && _elements[bottomIndex1] == type && _elements[bottomIndex2] == type);
         }
 
         public void Swap(int source, int target)
@@ -125,6 +134,9 @@ namespace SM3
         {
             Debug.Log(PrettyLog.GetMessage(nameof(Playground), nameof(CleanAt), $"{index}"));
             var list = GetRemovableElements(index);
+
+            if (list.Count == 1) return;
+
             list.ForEach(RemoveAt);
             
             var result = list.Select(element => Tuple.Create(element, (byte) 0)).ToList();
@@ -162,9 +174,10 @@ namespace SM3
             var result = new List<int>();
             if (!CheckRowNeighbors(index, _elements[index]))
                 return result;
-
-            var leftBorder = (index / Width) * Width;
-            var rightBorder = (index / Width + 1) * Width - 1;
+            
+            var rowIndex = index / Width;
+            var leftBorder = rowIndex * Width;
+            var rightBorder = (rowIndex + 1) * Width - 1;
             var elementType = _elements[index];
 
             for (var leftIndex = index; leftIndex >= leftBorder; leftIndex--)
@@ -187,16 +200,69 @@ namespace SM3
         private List<int> GetMaxVerticalSubset(int index)
         {
             var result = new List<int>();
+            if (!CheckColumnNeighbors(index, _elements[index]))
+                return result;
 
-            //find subset
-            return result;
+            var topBorder = index % Width;
+            var bottomBorder = topBorder + (Height - 1) * Width;
+            var elementType = _elements[index];
+
+            for (var topIndex = index; topIndex >= topBorder; topIndex -= Width)
+            {
+                if (topIndex >= topBorder && _elements[topIndex] == elementType) 
+                    result.Add(topIndex);
+                else break;
+            }
+
+            for (var bottomIndex = index; bottomIndex <= bottomBorder; bottomIndex += Width)
+            {
+                if (bottomIndex <= bottomBorder && _elements[bottomIndex] == elementType)
+                    result.Add(bottomIndex);
+                else break;
+            }
+
+            return result;;
         }
 
         public void Rearrange()
         {
-            //OnPlaygroundUpdated?.Invoke(new List<Tuple<int, byte>>());
+            var rearrangedElements = new List<Tuple<int, byte>>();
 
-            Debug.Log(PrettyLog.GetMessage(Rearrange));
+            for (var i = 0; i < Width; i++)
+                rearrangedElements.AddRange(GetSortedColumn(i));
+
+            OnPlaygroundUpdated?.Invoke(rearrangedElements);
+
+            Debug.Log(PrettyLog.GetMessage(nameof(Playground), nameof(Rearrange), rearrangedElements));
+        }
+
+        private List<Tuple<int, byte>> GetSortedColumn(int columnIndex)        
+        {
+            var result = new List<Tuple<int, byte>>();
+
+            var bottomBorder = columnIndex + (Height - 1) * Width;
+            for (var i = bottomBorder; i >= columnIndex; i -= Width)
+            {
+                if (_elements[i] == 0)
+                {
+                    for (var j = i; j >= columnIndex; j -= Width)
+                    {
+                        if (_elements[j] != 0)
+                        {
+                            var elementType = _elements[i];
+                            _elements[i] = _elements[j];
+                            _elements[j] = elementType;
+                        }
+                    }
+                }
+            }
+
+            for (var i = bottomBorder; i >= columnIndex; i -= Width)
+            {
+                result.Add(Tuple.Create(i, _elements[i]));
+            }
+
+            return result;
         }
 
         public void Fill()
@@ -208,7 +274,7 @@ namespace SM3
             {
                 if (element == 0)
                     filledElements.Add(Tuple.Create(i, 
-                        (byte) new Random().Next(1, new Random().Next(1, ElementTypesCount)));
+                        (byte) new Random().Next(1, new Random().Next(1, ElementTypesCount))));
                 i++;
             });
             

@@ -35,7 +35,7 @@ namespace SM3
 
             // Initialization game elements pallete
             _colors = new List<Color>();
-            _colors.Add(Color.white);
+            _colors.Add(Color.black);
             print(PrettyLog.GetMessage(Color.white, "is color of empty element 0"));
 
             for (var i = 1; i <= playground.ElementTypesCount; i++)
@@ -79,10 +79,10 @@ namespace SM3
             var canSwap = _playground.CanSwap(sourceIndex, targetIndex);
             print(PrettyLog.GetMessage($"Opportunity to swap {sourceIndex} with {targetIndex} is {canSwap}"));
             if (canSwap)
-                StartCoroutine(MakeFullSwap(sourceIndex, targetIndex));
+                StartCoroutine(MakeSwap(sourceIndex, targetIndex));
         }
 
-        private IEnumerator MakeFullSwap(int sourceIndex, int targetIndex)
+        private IEnumerator MakeSwap(int sourceIndex, int targetIndex)
         {
             _playground.Swap(sourceIndex, targetIndex);
             yield return new WaitForSeconds(0.5f);
@@ -90,8 +90,11 @@ namespace SM3
             _playground.CleanAt(sourceIndex);
             yield return new WaitForSeconds(0.5f);
             
-            //_playground.Rearrange();
-            yield return new WaitForSeconds(0.5f);
+            _playground.CleanAt(targetIndex);
+            yield return new WaitForSeconds(1f);
+
+            _playground.Rearrange();
+            yield return new WaitForSeconds(1f);
             
             _playground.Fill();
             yield return null;
