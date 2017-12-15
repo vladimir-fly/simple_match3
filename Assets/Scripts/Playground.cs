@@ -30,7 +30,9 @@ namespace SM3
             for (var i = 0; i < n * m; i++)
                 Add((byte) new Random().Next(1, new Random().Next(1, new Random().Next(1, elementTypesCount))));
 
+#if UNITY_EDITOR
             Debug.Log(PrettyLog.GetMessage(nameof(Playground), "Ctor", _elements));
+#endif
         }
 
         public byte this[int index]
@@ -70,12 +72,15 @@ namespace SM3
 
         public bool CanSwap(int source, int target)
         {
-            return CheckSwap(target, _elements[source]) || CheckSwap(source, _elements[target]);
-        }
+            // Temp swap
+            ExecuteSwap(source, target);
 
-        private bool CheckSwap(int index, byte type)
-        {
-            return CheckRowNeighbors(index, type) || CheckColumnNeighbors(index, type);
+            var result = CheckRowNeighbors(target, _elements[target]) || CheckColumnNeighbors(target, _elements[target]);
+
+            // UnSwap
+            ExecuteSwap(source, target);
+
+            return result;
         }
 
         private bool CheckRowNeighbors(int index, byte type)
@@ -83,18 +88,18 @@ namespace SM3
             var lineIndex = index / Width;
             
             var leftBorder = lineIndex * Width + 1;
-            var rightBorder = (index + 1) * Width + 1;
+            var rightBorder = (lineIndex + 1) * Width;
             
             var leftIndex1 = index - 1;
             var leftIndex2 = index - 2;
 
             var rightIndex1 = index + 1;
             var rightIndex2 = index + 2;
-
+            
             return 
-                (leftIndex1 >= leftBorder && rightIndex1 <= rightBorder && _elements[leftIndex1] == type && _elements[rightIndex1] == type) ||
+                (leftIndex1 >= leftBorder && rightIndex1 < rightBorder && _elements[leftIndex1] == type && _elements[rightIndex1] == type) ||
                 (leftIndex1 >= leftBorder && leftIndex2 >= leftBorder && _elements[leftIndex1] == type && _elements[leftIndex2] == type) || 
-                (rightIndex1 <= rightBorder && rightIndex2 <= rightBorder && _elements[rightIndex1] == type && _elements[rightIndex2] == type);
+                (rightIndex1 < rightBorder && rightIndex2 < rightBorder && _elements[rightIndex1] == type && _elements[rightIndex2] == type);
         }
 
         private bool CheckColumnNeighbors(int index, byte type)
@@ -116,9 +121,7 @@ namespace SM3
 
         public void Swap(int source, int target)
         {
-            var elementType = _elements[target];
-            _elements[target] = _elements[source];
-            _elements[source] = elementType;
+            ExecuteSwap(source, target);
 
             var updatedElementes = 
                 new[] 
@@ -130,18 +133,30 @@ namespace SM3
             OnPlaygroundUpdated?.Invoke(updatedElementes);
         }
 
+        private void ExecuteSwap(int source, int target)
+        {
+            var elementType = _elements[target];
+            _elements[target] = _elements[source];
+            _elements[source] = elementType;
+        }
+
         public void CleanAt(int index)
         {
+    #if UNITY_EDITOR
             Debug.Log(PrettyLog.GetMessage(nameof(Playground), nameof(CleanAt), $"{index}"));
+    #endif
+            
             var list = GetRemovableElements(index);
 
             if (list.Count == 1) return;
-
             list.ForEach(RemoveAt);
             
             var result = list.Select(element => Tuple.Create(element, (byte) 0)).ToList();
-            Debug.Log(PrettyLog.GetMessage(nameof(Playground), nameof(CleanAt), result));
             OnPlaygroundUpdated?.Invoke(result);
+
+    #if UNITY_EDITOR
+            Debug.Log(PrettyLog.GetMessage(nameof(Playground), nameof(CleanAt), result));
+    #endif    
         }
 
         private List<int> GetRemovableElements(int index)
@@ -155,7 +170,10 @@ namespace SM3
                 result.AddRange(elements);
             }
 
+    #if UNITY_EDITOR
             Debug.Log(PrettyLog.GetMessage(nameof(Playground), nameof(GetRemovableElements), result));
+    #endif
+
             return result.Distinct().ToList();
         }
 
@@ -221,7 +239,7 @@ namespace SM3
                 else break;
             }
 
-            return result;;
+            return result;
         }
 
         public void Rearrange()
@@ -233,7 +251,9 @@ namespace SM3
 
             OnPlaygroundUpdated?.Invoke(rearrangedElements);
 
+    #if UNITY_EDITOR
             Debug.Log(PrettyLog.GetMessage(nameof(Playground), nameof(Rearrange), rearrangedElements));
+    #endif
         }
 
         private List<Tuple<int, byte>> GetSortedColumn(int columnIndex)        
@@ -252,15 +272,14 @@ namespace SM3
                             var elementType = _elements[i];
                             _elements[i] = _elements[j];
                             _elements[j] = elementType;
+                            break;
                         }
                     }
                 }
             }
 
             for (var i = bottomBorder; i >= columnIndex; i -= Width)
-            {
                 result.Add(Tuple.Create(i, _elements[i]));
-            }
 
             return result;
         }
@@ -279,9 +298,11 @@ namespace SM3
             });
             
             filledElements.ForEach(element =>_elements[element.Item1] = element.Item2);
-
             OnPlaygroundUpdated?.Invoke(filledElements);
+
+    #if UNITY_EDITOR
             Debug.Log(PrettyLog.GetMessage(nameof(Playground), nameof(Fill), filledElements));
+    #endif
         }
 
         public void Clear()

@@ -14,14 +14,15 @@ namespace SM3
         private bool _isDragging;
         public Action<Element, Element> OnTrySwap;
 
-
         private void OnMouseDown()
         {
             _startPosition = transform.position;
             transform.position -= new Vector3(0f, 0f, 1f);
             _screenPoint = Camera.main.WorldToScreenPoint(gameObject.transform.position);
 
+    #if UNITY_EDITOR
             print(PrettyLog.GetMessage(OnMouseDown, $"_startPosition = {_startPosition}"));
+    #endif
         }
 
         private void OnMouseUp()
@@ -31,8 +32,10 @@ namespace SM3
             var upPosition = transform.position;
             transform.position = _startPosition;
 
+    #if UNITY_EDITOR
             print(PrettyLog.GetMessage(OnMouseUp, $"transform.position = {transform.position}"));
-            
+    #endif
+
             if (OnTrySwap != null)
             {
                 if (Input.GetMouseButtonDown(0)) return;
@@ -41,9 +44,11 @@ namespace SM3
                 Physics.Raycast(upPosition, new Vector3(0f, 0f, 1f), out hit);
                 var selectedItem = hit.transform?.gameObject.GetComponent<Element>();
 
+    #if UNITY_EDITOR
                 print(PrettyLog.GetMessage(OnMouseUp, $"selectedItem: {selectedItem}"));
-
-                OnTrySwap(this, selectedItem);
+    #endif
+                if (this != selectedItem)
+                    OnTrySwap(this, selectedItem);
             }
         }
 

@@ -13,8 +13,7 @@ namespace SM3.UI
         [SerializeField] private Button _startGameButton;
         [SerializeField] private Text _nValue;
         [SerializeField] private Text _mValue;
-        [SerializeField] private Text _elementTypesValue
-            ;
+        [SerializeField] private Text _elementTypesValue;
 
         private Action<byte, byte, byte> _startGame;
 
@@ -26,19 +25,19 @@ namespace SM3.UI
         private void Start()
         {
             _nValueSlider.wholeNumbers = true;
-            _nValueSlider.minValue = byte.MinValue;
+            _nValueSlider.minValue = 1;
             _nValueSlider.maxValue = byte.MaxValue;
             _nValueSlider.onValueChanged.AddListener(
                 @value => _nValue.text = @value.ToString());
 
             _mValueSlider.wholeNumbers = true;
-            _mValueSlider.minValue = byte.MinValue;
+            _mValueSlider.minValue = 1;
             _mValueSlider.maxValue = byte.MaxValue;
             _mValueSlider.onValueChanged.AddListener(
                 @value => _mValue.text = @value.ToString());
 
             _elementTypesSlider.wholeNumbers = true;
-            _elementTypesSlider.minValue = byte.MinValue;
+            _elementTypesSlider.minValue = 1;
             _elementTypesSlider.maxValue = byte.MaxValue;
             _elementTypesSlider.onValueChanged.AddListener(
                 @value => _elementTypesValue.text = @value.ToString());
